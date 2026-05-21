@@ -18,6 +18,7 @@ export default function EidCard() {
   const [text, setText] = useState("");
   const [userPhoto, setUserPhoto] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -42,11 +43,11 @@ export default function EidCard() {
     fileInputRef.current?.click();
   };
 
-  const handleDownload = async () => {
+   const handleDownload = async () => {
     try {
       setIsProcessing(true);
+      setProgress(0);
 
-      const hide = message.loading("Creating GIF...", 0);
 
       const response = await fetch("/images/Eid-card.gif");
       const buffer = await response.arrayBuffer();
@@ -55,12 +56,8 @@ export default function EidCard() {
       const parsedGif = gifuct.parseGIF(buffer);
       const rawFrames = gifuct.decompressFrames(parsedGif, true);
 
-      const originalWidth = parsedGif.lsd.width;
-      const originalHeight = parsedGif.lsd.height;
-
-      const scale = 0.7;
-      const width = originalWidth * scale;
-      const height = originalHeight * scale;
+      const width = parsedGif.lsd.width * 0.7;
+      const height = parsedGif.lsd.height * 0.7;
 
       const GIF = (await import("gif.js")).default;
 
@@ -80,8 +77,8 @@ export default function EidCard() {
       if (!ctx) return;
 
       const offCanvas = document.createElement("canvas");
-      offCanvas.width = originalWidth;
-      offCanvas.height = originalHeight;
+      offCanvas.width = parsedGif.lsd.width;
+      offCanvas.height = parsedGif.lsd.height;
 
       const offCtx = offCanvas.getContext("2d");
       if (!offCtx) return;
@@ -100,7 +97,7 @@ export default function EidCard() {
         const imageData = new ImageData(
           new Uint8ClampedArray(f.patch),
           f.dims.width,
-          f.dims.height,
+          f.dims.height
         );
 
         const patchCanvas = document.createElement("canvas");
@@ -124,9 +121,6 @@ export default function EidCard() {
           const y = height * 0.666 - size / 2 + position.y;
 
           ctx.save();
-          ctx.imageSmoothingEnabled = true;
-          ctx.imageSmoothingQuality = "high";
-
           ctx.beginPath();
           ctx.moveTo(x + radius, y);
           ctx.lineTo(x + size - radius, y);
@@ -145,16 +139,15 @@ export default function EidCard() {
         }
 
         if (text) {
-          const baseFontSize = width * 0.04;
-
           const fontSize =
-            text.length > 24 ? baseFontSize * (24 / text.length) : baseFontSize;
+            text.length > 24
+              ? Math.max(10, (width * 0.04 * 24) / text.length)
+              : width * 0.04;
 
-          ctx.font = `${fontSize}px Arial, sans-serif`;
+          ctx.font = `${fontSize}px Arial`;
           ctx.fillStyle = "#fff";
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
-
           ctx.fillText(text, width / 2, height * 0.85);
         }
 
@@ -164,37 +157,35 @@ export default function EidCard() {
         });
       }
 
+      gif.on("progress", (p: number) => {
+        setProgress(Math.round(p * 100));
+      });
+
       gif.on("finished", (blob: Blob) => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
 
         a.href = url;
         a.download = `eid-${text || "card"}.gif`;
-
-        document.body.appendChild(a);
         a.click();
-        a.remove();
 
         URL.revokeObjectURL(url);
 
         hide();
-        message.success("GIF Downloaded!");
         setIsProcessing(false);
-      });
-
-      gif.on("abort", () => {
-        hide();
-        message.error("GIF creation failed!");
-        setIsProcessing(false);
+        setProgress(0);
+        message.success("Downloaded!");
       });
 
       gif.render();
     } catch (err) {
       console.error(err);
-      message.error("Something went wrong!");
+      message.error("Error!");
       setIsProcessing(false);
+      setProgress(0);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-gray-100 flex justify-center items-center p-4">
@@ -250,7 +241,7 @@ export default function EidCard() {
         <div className="justify-center flex mt-4">
           <Card className="w-[350px]">
             <div className="mb-3">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-gray-700 ">
                 Zoom: {Math.round(zoom * 100)}%
               </label>
               <Slider
@@ -321,6 +312,20 @@ export default function EidCard() {
                 Download GIF
               </Button>
             </div>
+            {isProcessing && (
+            <div className="mt-3">
+              <div className="text-sm mb-1 !text-gray-700 ">
+                Download: {progress}%
+              </div>
+
+              <div className="w-full h-2 bg-gray-200 rounded">
+                <div
+                  className="h-2 bg-green-500 rounded transition-all"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          )}
           </Card>
         </div>
       </div>
