@@ -1,4 +1,4 @@
-import EidCard from "@/components/EidCard";
+import EidCard from "@/components/Eid-card";
 import EidCardEditor from "@/components/EidCardEditor";
 import Image from "next/image";
 

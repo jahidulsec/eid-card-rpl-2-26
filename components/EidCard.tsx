@@ -1,177 +1,169 @@
-// components/EidCard.tsx
 "use client";
 
-import { Button, Card } from "antd";
-import {
-  ArrowBigDown,
-  ArrowBigLeft,
-  ArrowBigRight,
-  ArrowBigUp,
-  CloudDownload,
-  CloudUpload,
-  Image as LucidImage,
-} from "lucide-react";
-import Image from "next/image";
-import { useCallback, useRef, useState } from "react";
-import { toPng, toSvg } from "html-to-image";
-import { Roboto, Kaushan_Script } from "next/font/google";
+import { useState, useCallback } from "react";
+import Cropper, { Area, Point } from "react-easy-crop";
+import { getCroppedImg } from "@/lib/cropImage"; // same helper as before
 
-const roboto = Kaushan_Script({
-  weight: "400",
-});
+export default function EidCardEditor() {
+  const [imageSrc, setImageSrc]         = useState<string | null>(null);
+  const [crop, setCrop]                 = useState<Point>({ x: 0, y: 0 });
+  const [zoom, setZoom]                 = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const [previewUrl, setPreviewUrl]     = useState<string | null>(null);     // ← card with photo
+  const [croppedBlobUrl, setCroppedBlobUrl] = useState<string | null>(null); // just the cropped face
 
-export default function EidCard() {
-  const [zoom, setZoom] = useState(1);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [text, setText] = useState("");
+  const CARD_WIDTH  = 1200;
+  const CARD_HEIGHT = 800;
 
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const photoRef = useRef<any>(null);
+  // Where the black square / photo frame is located in your template
+  const PHOTO_X = 380;   // ← you need to measure this
+  const PHOTO_Y = 220;
+  const PHOTO_W = 440;
+  const PHOTO_H = 440;
 
-  const gifRef = useRef<any>(null);
-
-  const move = (dx: any, dy: any) => {
-    setPosition((prev) => ({
-      x: prev.x + dx,
-      y: prev.y + dy,
-    }));
-  };
-
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const url = URL.createObjectURL(file);
-    setPhotoPreview(url);
-
-    return () => URL.revokeObjectURL(url);
-  };
-
-  const handleButtonClick = () => {
-    photoRef?.current.click(); // open file dialog
-  };
-
-  const handleConvertToImage = async () => {
-    if (gifRef.current === null) return;
-
-    try {
-      const dataUrl = await toPng(gifRef.current, { pixelRatio: 5 });
-      const link = document.createElement("a");
-      link.download = "eid-mubarak.png";
-      link.href = dataUrl;
-      link.click();
-    } catch (err) {
-      console.error("Failed to convert HTML to image", err);
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.[0]) {
+      const reader = new FileReader();
+      reader.onload = () => setImageSrc(reader.result as string);
+      reader.readAsDataURL(e.target.files[0]);
     }
   };
 
+  const onCropComplete = useCallback((_: Area, croppedAreaPixels: Area) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
+  // Create preview: composite cropped image into the card
+  const generatePreview = useCallback(async () => {
+    if (!imageSrc || !croppedAreaPixels) return;
+
+    try {
+      // 1. Get cropped image
+      const croppedImgDataUrl = await getCroppedImg(imageSrc, croppedAreaPixels);
+      setCroppedBlobUrl(croppedImgDataUrl);
+
+      // 2. Load background template
+      const bg = await loadImage("/eid-template.jpg"); // ← put your original image here (with black area)
+
+      const canvas = document.createElement("canvas");
+      canvas.width  = CARD_WIDTH;
+      canvas.height = CARD_HEIGHT;
+      const ctx = canvas.getContext("2d")!;
+
+      // Draw background
+      ctx.drawImage(bg, 0, 0, CARD_WIDTH, CARD_HEIGHT);
+
+      // Draw cropped photo in the black area
+      const photoImg = await loadImage(croppedImgDataUrl);
+      ctx.drawImage(photoImg, PHOTO_X, PHOTO_Y, PHOTO_W, PHOTO_H);
+
+      // Optional: you can draw semi-transparent overlay, logo, etc. here
+
+      setPreviewUrl(canvas.toDataURL("image/jpeg", 0.92));
+    } catch (err) {
+      console.error("Preview failed:", err);
+    }
+  }, [imageSrc, croppedAreaPixels]);
+
+  const downloadFinalCard = () => {
+    if (!previewUrl) return;
+    const link = document.createElement("a");
+    link.download = "Eid_Mubarak_MyPhoto.jpg";
+    link.href = previewUrl;
+    link.click();
+  };
+
   return (
-    <>
-      <div className="bg-gray-50 w-full flex flex-col justify-start items-center h-screen p-4">
-        <div className="w-full h-[430px] sm:w-[515px] card mb-3">
-          <div ref={gifRef} className="w-full h-full relative">
-            <Image
-              src={"/images/Eid-card.gif"}
-              alt="Profile picture"
-              width={500}
-              height={300}
-              priority
-              objectFit="cover"
-              className="z-10 border border-gray-200 rounded absolute max-h-[430px] w-auto top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-            />
+    <div className="max-w-5xl mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-6 text-center">Create Your Eid Card</h1>
 
-            <div className="absolute top-5/7 left-1/2 -translate-x-1/2 -translate-y-4/7">
-              {photoPreview ? (
-                <Image
-                  src={photoPreview || ""}
-                  alt="zoom"
-                  width={500}
-                  height={500}
-                  style={{
-                    transform: `translate(${position.x}px, ${position.y}px) scale(${zoom})`,
-                    transition: "transform 0.1s",
-                  }}
-                  className="max-h-27 w-auto"
-                />
-              ) : (
-                <LucidImage className="text-gray-500 text-4xl" />
-              )}
-            </div>
+      {/* Upload */}
+      <div className="mb-8 text-center">
+        <label className="block mb-3 text-lg font-medium">
+          Upload your photo
+        </label>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={onFileChange}
+          className="file-input file-input-bordered w-full max-w-md"
+        />
+      </div>
 
-            <div className="user-name z-20 absolute top-17/19 left-1/2 -translate-x-1/2 -translate-y-4/7">
-              <h1
-                className={`${roboto.className} w-max mb-2 text-[#303490] text-xl`}
-              >
-                {text}
-              </h1>
-            </div>
-          </div>
-        </div>
-        <div className="flex flex-col items-center">
-          <Card className="w-full">
-            <input
-              type="range"
-              min={1}
-              max={3}
-              step={0.05}
-              value={zoom}
-              onChange={(e) => setZoom(Number(e.target.value))}
-              className="range range-secondary w-full text-green-500"
-            />
-            <div className="space-x-2 mt-3">
-              <Button onClick={() => move(0, -5)}>
-                <ArrowBigUp />
-              </Button>
-              <Button onClick={() => move(0, 5)}>
-                <ArrowBigDown />
-              </Button>
-              <Button onClick={() => move(-5, 0)}>
-                <ArrowBigLeft />
-              </Button>
-              <Button onClick={() => move(5, 0)}>
-                <ArrowBigRight />
-              </Button>
-            </div>
-
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                className="input-style"
-                placeholder="Enter your name..."
+      {/* Crop area + controls */}
+      {imageSrc && (
+        <>
+          <div className="mb-6">
+            <div className="relative h-[420px] w-full max-w-[500px] mx-auto border rounded-lg overflow-hidden shadow">
+              <Cropper
+                image={imageSrc}
+                crop={crop}
+                zoom={zoom}
+                aspect={PHOTO_W / PHOTO_H} // important: match your frame ratio
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
               />
             </div>
-          </Card>
 
-          <div className="flex gap-3 mt-3">
-            <input
-              ref={photoRef}
-              type="file"
-              accept="image/*"
-              onChange={handlePhotoChange}
-              style={{ display: "none" }}
-            />
-            <Button
-              size="large"
-              type="primary"
-              style={{
-                backgroundColor: "#303490",
-              }}
-              onClick={handleButtonClick}
-            >
-              <CloudUpload />
-              Upload
-            </Button>
-            <Button size="large" onClick={handleConvertToImage}>
-              <CloudDownload />
-              Download
-            </Button>
+            <div className="mt-4 flex flex-col items-center gap-3">
+              <div className="w-64">
+                <label className="block text-sm mb-1">Zoom</label>
+                <input
+                  type="range"
+                  min={1}
+                  max={3}
+                  step={0.05}
+                  value={zoom}
+                  onChange={(e) => setZoom(Number(e.target.value))}
+                  className="range range-primary"
+                />
+              </div>
+
+              <button
+                onClick={generatePreview}
+                className="btn btn-primary px-10"
+                disabled={!croppedAreaPixels}
+              >
+                Preview in Card
+              </button>
+            </div>
           </div>
-        </div>
-      </div>
-    </>
+
+          {/* Preview result */}
+          {previewUrl && (
+            <div className="mt-10 text-center">
+              <h2 className="text-2xl font-semibold mb-4">Preview</h2>
+              <img
+                src={previewUrl}
+                alt="Eid Card Preview"
+                className="max-w-full mx-auto rounded-xl shadow-2xl border"
+                style={{ maxHeight: "700px" }}
+              />
+
+              <div className="mt-8">
+                <button
+                  onClick={downloadFinalCard}
+                  className="btn btn-success btn-lg px-12"
+                >
+                  Download Final Card
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
   );
+}
+
+// Helper
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = (err) => reject(err);
+    img.src = src;
+  });
 }
