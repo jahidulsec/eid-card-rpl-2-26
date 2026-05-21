@@ -61,8 +61,8 @@ export default function EidCard() {
     const GIF = (await import("gif.js")).default;
 
     const gif = new GIF({
-      workers: Math.max(8, navigator.hardwareConcurrency || 4),
-      quality: 2, 
+      workers: Math.max(2, navigator.hardwareConcurrency || 4),
+      quality: 6, 
       width,
       height,
       workerScript: "/gif.worker.js",
@@ -83,7 +83,6 @@ export default function EidCard() {
     const offCtx = offCanvas.getContext("2d");
     if (!offCtx) return;
 
-    // ✅ preload image ONCE (important speed boost)
     const uploadedImage = userPhoto
       ? await new Promise<HTMLImageElement>((resolve) => {
           const img = new Image();
@@ -92,7 +91,6 @@ export default function EidCard() {
         })
       : null;
 
-    // ✅ pre-calc constant values (speed boost)
     const baseSize = width * 0.28;
     const radius = 16;
 
@@ -102,7 +100,7 @@ export default function EidCard() {
     const xBase = centerX - baseSize / 2;
     const yBase = centerY - baseSize / 2;
 
-    for (let i = 0; i < frames.length; i++) {
+    for (let i = 0; i < frames.length; i+=1) {
       const f = frames[i];
 
       const imageData = new ImageData(
@@ -122,7 +120,6 @@ export default function EidCard() {
 
       offCtx.drawImage(patchCanvas, f.dims.left, f.dims.top);
 
-      // ⚡ no full clear (faster)
       ctx.globalCompositeOperation = "source-over";
       ctx.drawImage(offCanvas, 0, 0, width, height);
 
@@ -148,10 +145,9 @@ export default function EidCard() {
 
       gif.addFrame(ctx, {
         copy: true,
-        delay: f.delay || 80, // ⚡ smoother + faster encoding
+        delay: f.delay || 80, 
       });
 
-      // ✅ progress smoother
       setProgress(Math.round((i / frames.length) * 100));
     }
 
