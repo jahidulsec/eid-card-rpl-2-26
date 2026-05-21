@@ -171,7 +171,6 @@ export default function EidCard() {
 
         URL.revokeObjectURL(url);
 
-        hide();
         setIsProcessing(false);
         setProgress(0);
         message.success("Downloaded!");
