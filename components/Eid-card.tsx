@@ -126,25 +126,22 @@ export default function EidCard() {
         if (uploadedImage) {
           const imgRatio = uploadedImage.width / uploadedImage.height;
 
-          const x = xBase + position.x;
-          const y = yBase + position.y;
+          const drawWidth = baseSize * zoom;
+          const drawHeight = drawWidth / imgRatio;
 
-          const scaledSize = baseSize * (zoom + 0.125);
+          const positionX = (position.x * drawWidth) / 128;
+          const positionY = (position.y * drawWidth) / 128;
 
-          const sizedX = centerX - scaledSize / 2 + position.x * zoom;
-          const sizedY = centerY - scaledSize * 0.325 + position.y * zoom;
+          const sizedX = centerX - drawWidth / 2 +  positionX ;
+          const sizedY = centerY - drawHeight / 2 + positionY;
 
           ctx.save();
           ctx.beginPath();
-          ctx.roundRect(x, y, baseSize, baseSize, radius);
+          ctx.roundRect(xBase, yBase, baseSize, baseSize, radius);
           ctx.clip();
-          ctx.drawImage(
-            uploadedImage,
-            sizedX,
-            sizedY,
-            scaledSize,
-            scaledSize / imgRatio,
-          );
+
+          ctx.drawImage(uploadedImage, sizedX, sizedY, drawWidth, drawHeight);
+
           ctx.restore();
         }
 
@@ -282,7 +279,6 @@ export default function EidCard() {
                 />
               </div>
             </div>
-
             <Input
               value={text}
               onChange={(e) => setText(e.target.value)}
