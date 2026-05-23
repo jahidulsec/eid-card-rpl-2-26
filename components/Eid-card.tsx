@@ -44,143 +44,153 @@ export default function EidCard() {
   };
 
   const handleDownload = async () => {
-  try {
-    setIsProcessing(true);
-    setProgress(0);
+    try {
+      setIsProcessing(true);
+      setProgress(0);
 
-    const response = await fetch("/images/Eid-card.gif");
-    const buffer = await response.arrayBuffer();
+      const response = await fetch("/images/Eid-card.gif");
+      const buffer = await response.arrayBuffer();
 
-    const gifuct = await import("gifuct-js");
-    const parsedGif = gifuct.parseGIF(buffer);
-    const frames = gifuct.decompressFrames(parsedGif, true);
+      const gifuct = await import("gifuct-js");
+      const parsedGif = gifuct.parseGIF(buffer);
+      const frames = gifuct.decompressFrames(parsedGif, true);
 
-    const width = parsedGif.lsd.width;
-    const height = parsedGif.lsd.height;
+      const width = parsedGif.lsd.width;
+      const height = parsedGif.lsd.height;
 
-    const GIF = (await import("gif.js")).default;
+      const GIF = (await import("gif.js")).default;
 
-    const gif = new GIF({
-      workers: Math.max(2, navigator.hardwareConcurrency || 4),
-      quality: 6, 
-      width,
-      height,
-      workerScript: "/gif.worker.js",
-      dither: false,
-    });
-
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const offCanvas = document.createElement("canvas");
-    offCanvas.width = width;
-    offCanvas.height = height;
-
-    const offCtx = offCanvas.getContext("2d");
-    if (!offCtx) return;
-
-    const uploadedImage = userPhoto
-      ? await new Promise<HTMLImageElement>((resolve) => {
-          const img = new Image();
-          img.onload = () => resolve(img);
-          img.src = userPhoto;
-        })
-      : null;
-
-    const baseSize = width * 0.28;
-    const radius = 16;
-
-    const centerX = width * 0.5;
-    const centerY = height * 0.666;
-
-    const xBase = centerX - baseSize / 2;
-    const yBase = centerY - baseSize / 2;
-
-    for (let i = 0; i < frames.length; i+=1) {
-      const f = frames[i];
-
-      const imageData = new ImageData(
-        new Uint8ClampedArray(f.patch),
-        f.dims.width,
-        f.dims.height
-      );
-
-      const patchCanvas = document.createElement("canvas");
-      patchCanvas.width = f.dims.width;
-      patchCanvas.height = f.dims.height;
-
-      const pctx = patchCanvas.getContext("2d");
-      if (!pctx) continue;
-
-      pctx.putImageData(imageData, 0, 0);
-
-      offCtx.drawImage(patchCanvas, f.dims.left, f.dims.top);
-
-      ctx.globalCompositeOperation = "source-over";
-      ctx.drawImage(offCanvas, 0, 0, width, height);
-
-      if (uploadedImage) {
-        const x = xBase + position.x;
-        const y = yBase + position.y;
-
-        ctx.save();
-        ctx.beginPath();
-        ctx.roundRect(x, y, baseSize, baseSize, radius);
-        ctx.clip();
-        ctx.drawImage(uploadedImage, x, y, baseSize, baseSize);
-        ctx.restore();
-      }
-
-      if (text) {
-        ctx.font = `${width * 0.04}px Arial`;
-        ctx.fillStyle = "#fff";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(text, width / 2, height * 0.85);
-      }
-
-      gif.addFrame(ctx, {
-        copy: true,
-        delay: f.delay || 80, 
+      const gif = new GIF({
+        workers: Math.max(2, navigator.hardwareConcurrency || 4),
+        quality: 10,
+        width,
+        height,
+        workerScript: "/gif.worker.js",
+        dither: false,
       });
 
-      setProgress(Math.round((i / frames.length) * 100));
-    }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
 
-    gif.on("progress", (p: number) => {
-      setProgress(Math.round(p * 100));
-    });
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
 
-    gif.on("finished", (blob: Blob) => {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
+      const offCanvas = document.createElement("canvas");
+      offCanvas.width = width;
+      offCanvas.height = height;
 
-      a.href = url;
-      a.download = `eid-${text || "card"}.gif`;
-      a.click();
+      const offCtx = offCanvas.getContext("2d");
+      if (!offCtx) return;
 
-      URL.revokeObjectURL(url);
+      const uploadedImage = userPhoto
+        ? await new Promise<HTMLImageElement>((resolve) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.src = userPhoto;
+          })
+        : null;
 
+      const baseSize = width * 0.28;
+      const radius = 16;
+
+      const centerX = width * 0.5;
+      const centerY = height * 0.666;
+
+      const xBase = centerX - baseSize / 2;
+      const yBase = centerY - baseSize / 2;
+
+      for (let i = 0; i < frames.length; i += 1) {
+        const f = frames[i];
+
+        const imageData = new ImageData(
+          new Uint8ClampedArray(f.patch),
+          f.dims.width,
+          f.dims.height,
+        );
+
+        const patchCanvas = document.createElement("canvas");
+        patchCanvas.width = f.dims.width;
+        patchCanvas.height = f.dims.height;
+
+        const pctx = patchCanvas.getContext("2d");
+        if (!pctx) continue;
+
+        pctx.putImageData(imageData, 0, 0);
+
+        offCtx.drawImage(patchCanvas, f.dims.left, f.dims.top);
+
+        ctx.globalCompositeOperation = "source-over";
+        ctx.drawImage(offCanvas, 0, 0, width, height);
+
+        if (uploadedImage) {
+          const imgRatio = uploadedImage.width / uploadedImage.height;
+
+          const x = xBase + position.x;
+          const y = yBase + position.y;
+
+          const scaledSize = baseSize * (zoom + 0.125);
+
+          const sizedX = centerX - scaledSize / 2 + position.x * zoom;
+          const sizedY = centerY - scaledSize * 0.325 + position.y * zoom;
+
+          ctx.save();
+          ctx.beginPath();
+          ctx.roundRect(x, y, baseSize, baseSize, radius);
+          ctx.clip();
+          ctx.drawImage(
+            uploadedImage,
+            sizedX,
+            sizedY,
+            scaledSize,
+            scaledSize / imgRatio,
+          );
+          ctx.restore();
+        }
+
+        if (text) {
+          ctx.font = `${width * 0.04}px Arial`;
+          ctx.fillStyle = "#fff";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(text, width / 2, height * 0.85);
+        }
+
+        gif.addFrame(ctx, {
+          copy: true,
+          delay: f.delay || 80,
+        });
+
+        setProgress(Math.round((i / frames.length) * 100));
+      }
+
+      gif.on("progress", (p: number) => {
+        setProgress(Math.round(p * 100));
+      });
+
+      gif.on("finished", (blob: Blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+
+        a.href = url;
+        a.download = `eid-${text || "card"}.gif`;
+        a.click();
+
+        URL.revokeObjectURL(url);
+
+        setIsProcessing(false);
+        setProgress(0);
+        message.success("Downloaded!");
+      });
+
+      gif.render();
+    } catch (err) {
+      console.error(err);
+      message.error("Error!");
       setIsProcessing(false);
       setProgress(0);
-      message.success("Downloaded!");
-    });
-
-    gif.render();
-  } catch (err) {
-    console.error(err);
-    message.error("Error!");
-    setIsProcessing(false);
-    setProgress(0);
-  }
-};
-
-
-
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 flex justify-center items-center p-4">
