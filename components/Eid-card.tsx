@@ -129,8 +129,8 @@ export default function EidCard() {
           const drawWidth = baseSize * zoom;
           const drawHeight = drawWidth / imgRatio;
 
-          const positionX = (position.x * drawWidth) / 128;
-          const positionY = (position.y * drawWidth) / 128;
+          const positionX = (position.x * drawWidth) / 103;
+          const positionY = (position.y * drawWidth) / 103;
 
           const sizedX = centerX - drawWidth / 2 +  positionX ;
           const sizedY = centerY - drawHeight / 2 + positionY;
@@ -191,7 +191,7 @@ export default function EidCard() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex justify-center items-center p-4">
-      <div className="w-full max-w-md">
+      <div className="w-full min-w-[360px] max-w-[360px]">
         <Card className="mb-4 overflow-hidden">
           <div className="relative">
             {userPhoto && (
@@ -208,7 +208,7 @@ export default function EidCard() {
                 <img
                   src={userPhoto}
                   alt=""
-                  className="w-32 h-auto object-cover"
+                  className="w-[103px] h-auto object-cover"
                 />
               </div>
             )}
