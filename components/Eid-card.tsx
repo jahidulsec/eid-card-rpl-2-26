@@ -62,7 +62,7 @@ export default function EidCard() {
 
       const gif = new GIF({
         workers: Math.max(2, navigator.hardwareConcurrency || 4),
-        quality: 10,
+        quality: 2,
         width,
         height,
         workerScript: "/gif.worker.js",
@@ -137,10 +137,10 @@ export default function EidCard() {
 
           ctx.save();
           ctx.beginPath();
-          ctx.roundRect(xBase, yBase, baseSize, baseSize, radius);
+          ctx.roundRect(xBase, yBase - 20, baseSize, baseSize + 20, radius);
           ctx.clip();
 
-          ctx.drawImage(uploadedImage, sizedX, sizedY, drawWidth, drawHeight);
+          ctx.drawImage(uploadedImage, sizedX, sizedY - 20, drawWidth, drawHeight);
 
           ctx.restore();
         }
