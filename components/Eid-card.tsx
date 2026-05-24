@@ -62,7 +62,7 @@ export default function EidCard() {
 
       const gif = new GIF({
         workers: Math.max(2, navigator.hardwareConcurrency || 4),
-        quality: 2,
+        quality: 5,
         width,
         height,
         workerScript: "/gif.worker.js",
@@ -95,7 +95,7 @@ export default function EidCard() {
       const radius = 16;
 
       const centerX = width * 0.5;
-      const centerY = height * 0.666;
+      const centerY = height * 0.625;
 
       const xBase = centerX - baseSize / 2;
       const yBase = centerY - baseSize / 2;
@@ -137,10 +137,10 @@ export default function EidCard() {
 
           ctx.save();
           ctx.beginPath();
-          ctx.roundRect(xBase, yBase - 40, baseSize + 2, baseSize + 40, radius);
+          ctx.roundRect(xBase, yBase, baseSize, baseSize, radius);
           ctx.clip();
 
-          ctx.drawImage(uploadedImage, sizedX, sizedY - 40, drawWidth + 2, drawHeight + 40);
+          ctx.drawImage(uploadedImage, sizedX, sizedY, drawWidth, drawHeight);
 
           ctx.restore();
         }
@@ -150,7 +150,7 @@ export default function EidCard() {
           ctx.fillStyle = "#fff";
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
-          ctx.fillText(text, width / 2, height * 0.85);
+          ctx.fillText(text, width / 2, height * 0.82);
         }
 
         gif.addFrame(ctx, {
@@ -196,7 +196,7 @@ export default function EidCard() {
           <div className="relative">
             {userPhoto && (
               <div
-                className="absolute left-1/2 top-[67%] z-10"
+                className="absolute left-1/2 top-[64%] z-10"
                 style={{
                   transform: `
                     translate(-50%, -50%)
@@ -221,7 +221,7 @@ export default function EidCard() {
 
             {text && (
               <div
-                className="absolute left-1/2 bottom-[12%] z-30"
+                className="absolute left-1/2 bottom-[16%] z-30"
                 style={{ transform: "translateX(-50%)" }}
               >
                 <h1
