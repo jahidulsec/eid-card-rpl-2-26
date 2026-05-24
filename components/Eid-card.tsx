@@ -92,10 +92,10 @@ export default function EidCard() {
         : null;
 
       const baseSize = width * 0.28;
-      const radius = 16;
+      const radius = 20;
 
       const centerX = width * 0.5;
-      const centerY = height * 0.625;
+      const centerY = height * 0.63875;
 
       const xBase = centerX - baseSize / 2;
       const yBase = centerY - baseSize / 2;
@@ -132,12 +132,18 @@ export default function EidCard() {
           const positionX = (position.x * drawWidth) / 103;
           const positionY = (position.y * drawWidth) / 103;
 
-          const sizedX = centerX - drawWidth / 2 +  positionX ;
+          const sizedX = centerX - drawWidth / 2 + positionX;
           const sizedY = centerY - drawHeight / 2 + positionY;
 
           ctx.save();
           ctx.beginPath();
-          ctx.roundRect(xBase, yBase, baseSize, baseSize, radius);
+          ctx.roundRect(
+            xBase - 40,
+            yBase - 40,
+            baseSize + 40,
+            baseSize + 40,
+            radius,
+          );
           ctx.clip();
 
           ctx.drawImage(uploadedImage, sizedX, sizedY, drawWidth, drawHeight);
