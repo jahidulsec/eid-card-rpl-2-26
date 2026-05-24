@@ -137,10 +137,10 @@ export default function EidCard() {
 
           ctx.save();
           ctx.beginPath();
-          ctx.roundRect(xBase, yBase - 38, baseSize, baseSize + 38, radius);
+          ctx.roundRect(xBase, yBase - 40, baseSize + 2, baseSize + 40, radius);
           ctx.clip();
 
-          ctx.drawImage(uploadedImage, sizedX, sizedY - 38, drawWidth, drawHeight + 38);
+          ctx.drawImage(uploadedImage, sizedX, sizedY - 40, drawWidth + 2, drawHeight + 40);
 
           ctx.restore();
         }
