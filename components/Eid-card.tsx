@@ -62,7 +62,7 @@ export default function EidCard() {
 
       const gif = new GIF({
         workers: Math.max(2, navigator.hardwareConcurrency || 4),
-        quality: 5,
+        quality: 3,
         width,
         height,
         workerScript: "/gif.worker.js",
@@ -91,11 +91,11 @@ export default function EidCard() {
           })
         : null;
 
-      const baseSize = width * 0.28;
+      const baseSize = width * 0.285;
       const radius = 20;
 
       const centerX = width * 0.5;
-      const centerY = height * 0.63875;
+      const centerY = height * 0.62125;
 
       const xBase = centerX - baseSize / 2;
       const yBase = centerY - baseSize / 2;
@@ -129,8 +129,8 @@ export default function EidCard() {
           const drawWidth = baseSize * zoom;
           const drawHeight = drawWidth / imgRatio;
 
-          const positionX = (position.x * drawWidth) / 103;
-          const positionY = (position.y * drawWidth) / 103;
+          const positionX = (position.x * drawWidth) /95;
+          const positionY = (position.y * drawHeight) / 95;
 
           const sizedX = centerX - drawWidth / 2 + positionX;
           const sizedY = centerY - drawHeight / 2 + positionY;
@@ -138,10 +138,10 @@ export default function EidCard() {
           ctx.save();
           ctx.beginPath();
           ctx.roundRect(
-            xBase - 40,
-            yBase - 40,
-            baseSize + 40,
-            baseSize + 40,
+            xBase,
+            yBase,
+            baseSize,
+            baseSize,
             radius,
           );
           ctx.clip();
@@ -202,7 +202,7 @@ export default function EidCard() {
           <div className="relative">
             {userPhoto && (
               <div
-                className="absolute left-1/2 top-[64%] z-10"
+                className="absolute left-1/2 top-[62.125%] z-10"
                 style={{
                   transform: `
                     translate(-50%, -50%)
@@ -214,7 +214,7 @@ export default function EidCard() {
                 <img
                   src={userPhoto}
                   alt=""
-                  className="w-[103px] h-auto object-cover"
+                  className="w-[95px] h-auto object-contain"
                 />
               </div>
             )}
